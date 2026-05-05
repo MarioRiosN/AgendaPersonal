@@ -1,0 +1,90 @@
+<div class="container">
+  <h1>📅 Mi Agenda</h1>
+  <div class="header">
+    <button (click)="prevMonth()">⬅</button>
+    <h2>
+      {{ currentDate | date:'MMMM yyyy' }}
+    </h2>
+    <button (click)="nextMonth()">➡</button>
+  </div>
+  <div class="weekdays">
+    <div>L</div>
+    <div>M</div>
+    <div>X</div>
+    <div>J</div>
+    <div>V</div>
+    <div>S</div>
+    <div>D</div>
+  </div>
+  <div class="calendar">
+    <div class="day" *ngFor="let day of days">
+      <!-- 🔥 celdas vacías -->
+      <div *ngIf="!day" class="empty"></div>
+      <!-- día real -->
+      <ng-container *ngIf="day">
+        <div class="date" [class.today]="isToday(day)">
+          {{ day.getDate() }}
+        </div>
+        <div class="events">
+          <div class="event" *ngFor="let item of getItemsByDay(day).slice(0,3)">
+            <span *ngIf="item.type === 'text'">
+              📝 {{ item.content }}
+            </span>
+            <span *ngIf="item.type === 'file'">
+              📎 {{ item.fileName }}
+            </span>
+          </div>
+          <div *ngIf="getItemsByDay(day).length > 3">
+            + más...
+          </div>
+        </div>
+        <button (click)="openDay(day)">+</button>
+      </ng-container>
+    </div>
+  </div>
+</div>
+
+<div class="modal" *ngIf="selectedDay" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <!-- HEADER -->
+    <div class="modal-header">
+      <h3>{{ selectedDay | date:'dd MMMM yyyy' }}</h3>
+      <button class="close" (click)="closeModal()">✕</button>
+    </div>
+    <!-- LISTA -->
+    <div class="items">
+      <div class="item" *ngFor="let item of getItemsByDay(selectedDay)">
+        <div class="item-content">
+          <div *ngIf="item.type === 'text'">
+            📝 {{ item.content }}
+          </div>
+          <div *ngIf="item.type === 'file'" (click)="openFile(item)">
+            📎 {{ item.fileName }}
+          </div>
+        </div>
+        <div class="item-actions">
+          <button *ngIf="item.type === 'text'" (click)="editItem(item)">✏️</button>
+          <button (click)="deleteItem(item)">🗑️</button>
+        </div>
+      </div>
+    </div>
+    <!-- FORMULARIO TEXTO -->
+    <div class="form">
+      <input 
+        type="text" 
+        [(ngModel)]="newText" 
+        placeholder="Escribe recordatorio..."
+      />
+      <input 
+        type="time" 
+        [(ngModel)]="newTime"
+      />
+      <button (click)="addTextFromForm()">Añadir</button>
+    </div>
+    <!-- ARCHIVOS -->
+    <div class="file-section">
+      <button (click)="fileInput.click()">📎 Añadir archivo</button>
+      <input type="file" hidden #fileInput (change)="handleFile($event)" />
+    </div>
+  </div>
+</div>

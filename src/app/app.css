@@ -1,0 +1,297 @@
+:host {
+  display: block;
+  font-family: system-ui, -apple-system, Arial;
+  background: #f6f7fb;
+  min-height: 100vh;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+/* Título */
+h1 {
+  text-align: center;
+  font-size: 22px;
+  margin: 10px 0 15px;
+  color: #222;
+}
+
+/* FORM */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+input {
+  padding: 12px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  outline: none;
+  background: white;
+}
+
+button {
+  padding: 12px;
+  font-size: 16px;
+  border: none;
+  border-radius: 10px;
+  background: #4a90e2;
+  color: white;
+}
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  align-items: stretch;
+}
+
+/* número del día */
+.date {
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* contenedor eventos */
+.events {
+  flex: 1;
+  overflow-y: auto;           /* 👈 scroll interno */
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  /* opcional: scrollbar más discreta */
+  scrollbar-width: none;
+}
+
+.events::-webkit-scrollbar {
+  display: none;
+}
+
+/* evento */
+.event {
+  font-size: 10px;
+  background: #e8f2ff;
+  color: #1a4d8f;
+  padding: 2px 4px;
+  border-radius: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.day button {
+  margin-top: 6px;
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 0;
+
+  font-size: 14px;
+  font-weight: bold;
+
+  background: linear-gradient(135deg, #4a90e2, #357ABD);
+  color: white;
+
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* efecto click */
+.day button:active {
+  transform: scale(0.96);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* RESPONSIVE (pantallas pequeñas) */
+@media (max-width: 400px) {
+  .calendar {
+    gap: 4px;
+  }
+
+  .day {
+    min-height: 70px;
+    padding: 4px;
+  }
+
+  .event {
+    font-size: 9px;
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.header h2 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #666;
+  font-size: 12px;
+}
+
+.empty {
+  background: transparent;
+  height: 110px;
+}
+
+.day {
+  background: white;
+  border-radius: 10px;
+  height: 110px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.today {
+  background: #4a90e2;
+  color: white;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+/* móvil: desde abajo */
+.modal-content {
+  background: white;
+  width: 100%;
+  max-width: 500px;
+  border-radius: 16px 16px 0 0;
+  padding: 15px;
+  max-height: 85%;
+  overflow-y: auto;
+}
+
+/* 💻 desktop: centrado */
+@media (min-width: 600px) {
+  .modal {
+    align-items: center;
+  }
+
+  .modal-content {
+    border-radius: 16px;
+    max-height: 80%;
+  }
+}
+
+/* HEADER */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.close {
+  width: 32px;
+  height: 32px;
+
+  border-radius: 50%;
+  border: none;
+
+  background: #eee;
+  color: #333;
+
+  font-size: 18px;
+  font-weight: bold;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ITEMS */
+.items {
+  margin: 10px 0;
+}
+
+/* FORM */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form input {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.form button {
+  background: #4a90e2;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+/* FILE */
+.file-section {
+  margin-top: 10px;
+}
+
+.file-section button {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+
+  background: transparent;
+  color: #4a90e2;
+
+  border: 2px dashed #4a90e2;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f4f4f4;
+  padding: 8px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+
+.item-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.item-actions button {
+  border: none;
+  background: #ddd;
+  border-radius: 6px;
+  padding: 4px 6px;
+}
