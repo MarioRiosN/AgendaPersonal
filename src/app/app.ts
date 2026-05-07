@@ -231,7 +231,7 @@ export class App {
     window.open(url);
   } */
 
-  async openFile(item: CalendarItem) {
+  /* async openFile(item: CalendarItem) {
 
     const data = await this.db.getFile(item.id);
 
@@ -253,6 +253,19 @@ export class App {
     document.body.removeChild(a);
 
     URL.revokeObjectURL(url);
+  } */
+
+  async openFile(item: CalendarItem) {
+
+    const data = await this.db.getFile(item.id);
+
+    if (!data) return;
+
+    const blob = data.file;
+
+    const url = URL.createObjectURL(blob);
+
+    window.location.href = url;
   }
 }
 
