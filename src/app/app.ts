@@ -220,7 +220,7 @@ export class App {
     }
   }
 
-  async openFile(item: CalendarItem) {
+  /* async openFile(item: CalendarItem) {
     const data = await this.db.getFile(item.id);
 
     if (!data) return;
@@ -229,6 +229,30 @@ export class App {
     const url = URL.createObjectURL(blob);
 
     window.open(url);
+  } */
+
+  async openFile(item: CalendarItem) {
+
+    const data = await this.db.getFile(item.id);
+
+    if (!data) return;
+
+    const blob = data.file;
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+
+    a.href = url;
+    a.download = item.fileName || 'file';
+
+    document.body.appendChild(a);
+
+    a.click();
+
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(url);
   }
 }
 
