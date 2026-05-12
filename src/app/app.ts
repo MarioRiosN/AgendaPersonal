@@ -2,6 +2,8 @@ import { ChangeDetectorRef, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DbService } from './db.service';
+import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 
 @Component({
   selector: 'app-root',
@@ -25,6 +27,10 @@ export class App {
 
   constructor(private db: DbService, private cdr: ChangeDetectorRef) {}
 
+  isNativeApp(): boolean {
+    return Capacitor.isNativePlatform();
+  }
+
   ngOnInit() {
     this.generateCalendar();  // UI primero
     this.init();              // luego DB
@@ -33,6 +39,9 @@ export class App {
   async init() {
     await this.db.init();
     this.load();
+    if (this.isNativeApp()) {
+      await LocalNotifications.requestPermissions();
+    }
   }
 
   save() {
@@ -163,6 +172,13 @@ export class App {
       id,
       file
     });
+
+    await this.scheduleNotifications({
+      id,
+      datetime: this.selectedDay.toISOString(),
+      type: 'file',
+      fileName: file.name
+    });
   }
 
   getItemsByDay(day: Date) {
@@ -177,7 +193,7 @@ export class App {
     });
   }
 
-  addTextFromForm() {
+  async addTextFromForm() {
     if (!this.newText || !this.newTime || !this.selectedDay) return;
 
     const datetime = new Date(this.selectedDay);
@@ -185,17 +201,21 @@ export class App {
 
     datetime.setHours(+h, +m);
 
-    this.items.push({
+    const item: CalendarItem = {
       id: Date.now().toString(),
       datetime: datetime.toISOString(),
       type: 'text',
       content: this.newText
-    });
+    };
+
+    this.items = [...this.items, item];
 
     this.newText = '';
     this.newTime = '';
 
     this.save();
+
+    await this.scheduleNotifications(item);
   }
 
   async deleteItem(item: CalendarItem) {
@@ -207,6 +227,8 @@ export class App {
     if (item.type === 'file') {
       await this.db.deleteFile(item.id);
     }
+
+    await this.cancelNotifications(item);
   }
 
   editItem(item: CalendarItem) {
@@ -220,52 +242,61 @@ export class App {
     }
   }
 
-  /* async openFile(item: CalendarItem) {
-    const data = await this.db.getFile(item.id);
-
-    if (!data) return;
-
-    const blob = data.file;
-    const url = URL.createObjectURL(blob);
-
-    window.open(url);
-  } */
-
-  /* async openFile(item: CalendarItem) {
-
-    const data = await this.db.getFile(item.id);
-
-    if (!data) return;
-
-    const blob = data.file;
-
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-
-    a.href = url;
-    a.download = item.fileName || 'file';
-
-    document.body.appendChild(a);
-
-    a.click();
-
-    document.body.removeChild(a);
-
-    URL.revokeObjectURL(url);
-  } */
-
   async openFile(item: CalendarItem) {
-
     const data = await this.db.getFile(item.id);
-
     if (!data) return;
-
     const blob = data.file;
-
     const url = URL.createObjectURL(blob);
-
     window.location.href = url;
+  }
+
+  async scheduleNotifications(item: CalendarItem) {
+  if (!this.isNativeApp()) return;
+  const eventDate = new Date(item.datetime);
+  const notifications = [];
+  for (let i = 2; i >= 0; i--) {
+      const notifyDate = new Date(eventDate);
+
+      notifyDate.setDate(eventDate.getDate() - i);
+
+      if (notifyDate < new Date()) continue;
+
+      notifications.push({
+        title: '📅 Reminder',
+        body:
+          item.type === 'text'
+            ? item.content || 'Event'
+            : item.fileName || 'File',
+
+        id: Number(item.id + i),
+
+        schedule: {
+          at: notifyDate
+        }
+      });
+    }
+    await LocalNotifications.schedule({
+      notifications
+    });
+  }
+
+  async cancelNotifications(item: CalendarItem) {
+
+    if (!this.isNativeApp()) return;
+
+    const ids = [];
+
+    for (let i = 0; i <= 2; i++) {
+
+      ids.push({
+        id: Number(item.id + i)
+      });
+
+    }
+
+    await LocalNotifications.cancel({
+      notifications: ids
+    });
   }
 }
 
@@ -274,7 +305,7 @@ type CalendarItem = {
   datetime: string;
   type: 'text' | 'file';
   title?: string;
-  content?: string; // texto
+  content?: string;
   fileName?: string;
   fileType?: string;
   fileData?: Blob;
