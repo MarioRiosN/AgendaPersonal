@@ -46,7 +46,7 @@ export class App {
     }
   }
 
-  save() {
+  /* save() {
     const itemsToSave = this.items.map(i => {
       if (i.type === 'file') {
         return {
@@ -61,14 +61,33 @@ export class App {
     });
 
     localStorage.setItem('items', JSON.stringify(itemsToSave));
+  } */
+
+  save() {
+    localStorage.setItem('items', JSON.stringify(this.items));
   }
 
-  load() {
+  /* load() {
     const data = localStorage.getItem('items');
     if (data) {
       this.items = JSON.parse(data);
       this.cdr.detectChanges(); // 👈 fuerza render
     }
+  } */
+
+  load() {
+    const data = localStorage.getItem('items');
+
+    if (!data) {
+      this.items = [];
+      return;
+    }
+
+    this.items = JSON.parse(data);
+
+    // 🔥 safety: ensure array reactivity
+    this.items = [...this.items];
+    this.cdr.detectChanges();
   }
 
   generateCalendar() {
@@ -216,7 +235,7 @@ export class App {
     reader.readAsDataURL(file);
   } */
 
-  async handleFile(event: any) {
+  /* async handleFile(event: any) {
     const file = event.target.files[0];
     if (!file || !this.selectedDay) return;
 
@@ -248,8 +267,46 @@ export class App {
           filePath: path
         } as any
       ];
-
+      
+      alert('ADDING FILE ITEM' + this.items);
       this.save();
+      this.cdr.detectChanges();
+    };
+
+    reader.readAsDataURL(file);
+  } */
+
+  async handleFile(event: any) {
+    const file = event.target.files[0];
+    if (!file || !this.selectedDay) return;
+
+    const id = Date.now().toString();
+    const path = `calendar/${id}-${file.name}`;
+
+    const reader = new FileReader();
+
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      const base64 = dataUrl.split(',')[1]; // 🔥 IMPORTANT FIX
+
+      await Filesystem.writeFile({
+        path,
+        data: base64,
+        directory: Directory.Data
+      });
+
+      const newItem: CalendarItem = {
+        id,
+        datetime: this.selectedDay!.toISOString(),
+        type: 'file',
+        fileName: file.name,
+        fileType: file.type,
+        filePath: path
+      };
+
+      this.items = [...this.items, newItem];
+      this.save();
+      this.cdr.detectChanges();
     };
 
     reader.readAsDataURL(file);
@@ -292,7 +349,7 @@ export class App {
     await this.scheduleNotifications(item);
   }
 
-  async deleteItem(item: CalendarItem) {
+  /* async deleteItem(item: CalendarItem) {
     // 1. actualizar UI primero
     this.items = this.items.filter(i => i.id !== item.id);
     this.save();
@@ -300,6 +357,22 @@ export class App {
     // 2. luego borrar en DB
     if (item.type === 'file') {
       await this.db.deleteFile(item.id);
+    }
+
+    await this.cancelNotifications(item);
+  } */
+
+  async deleteItem(item: CalendarItem) {
+    // 1. actualizar UI primero
+    this.items = this.items.filter(i => i.id !== item.id);
+    this.save();
+
+    // 2. luego borrar en DB
+    if (item.type === 'file' && item.filePath) {
+      await Filesystem.deleteFile({
+        path: item.filePath,
+        directory: Directory.Data
+      });
     }
 
     await this.cancelNotifications(item);
@@ -395,7 +468,7 @@ export class App {
     }
   } */
 
-  async openFile(item: CalendarItem) {
+  /* async openFile(item: CalendarItem) {
     try {
       if (!item.filePath) {
         alert('Missing file path');
@@ -415,6 +488,24 @@ export class App {
 
     } catch (e) {
       alert('File not found in filesystem');
+    }
+  } */
+
+  async openFile(item: CalendarItem) {
+    try {
+      if (!item.filePath) {
+        alert('Missing file path');
+        return;
+      }
+
+      const file = await Filesystem.getUri({
+        directory: Directory.Data,
+        path: item.filePath
+      });
+
+      window.open(file.uri, '_system');
+    } catch (e) {
+      alert('File not found');
     }
   }
 
@@ -477,5 +568,5 @@ type CalendarItem = {
   fileType?: string;
 
   // 🔥 NEW
-  filePath?: string;
+  filePath?: string | null;
 };
