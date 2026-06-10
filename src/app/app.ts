@@ -242,12 +242,32 @@ export class App {
     }
   }
 
-  async openFile(item: CalendarItem) {
+  /* async openFile(item: CalendarItem) {
     const data = await this.db.getFile(item.id);
     if (!data) return;
     const blob = data.file;
     const url = URL.createObjectURL(blob);
     window.location.href = url;
+  } */
+
+  async openFile(item: CalendarItem) {
+    const data = await this.db.getFile(item.id);
+    if (!data) return;
+
+    const blob = data.file;
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';   // IMPORTANT for iOS
+    a.rel = 'noopener';
+
+    document.body.appendChild(a);
+    a.click();
+
+    document.body.removeChild(a);
+
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   async scheduleNotifications(item: CalendarItem) {
