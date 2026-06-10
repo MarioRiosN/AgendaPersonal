@@ -251,10 +251,15 @@ export class App {
   } */
 
   async openFile(item: CalendarItem) {
+    alert('clicked');
     const data = await this.db.getFile(item.id);
-    if (!data) return;
-
+    if (!data) {
+      alert('file not found');
+      return
+    };
+    alert('file found');
     const blob = data.file;
+    alert(blob.type);
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement('a');
