@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { DbService } from './db.service';
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { Share } from '@capacitor/share';
 
 @Component({
   selector: 'app-root',
@@ -250,7 +251,7 @@ export class App {
     window.location.href = url;
   } */
 
-  async openFile(item: CalendarItem) {
+  /* async openFile(item: CalendarItem) {
     alert('clicked');
     const data = await this.db.getFile(item.id);
     if (!data) {
@@ -273,6 +274,33 @@ export class App {
     document.body.removeChild(a);
 
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } */
+
+  async openFile(item: CalendarItem) {
+    const data = await this.db.getFile(item.id);
+
+    if (!data) {
+      alert('file not found');
+      return;
+    }
+
+    const blob = data.file;
+
+    // Convert blob → base64
+    const reader = new FileReader();
+
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+
+      // iOS-safe: share/open system sheet
+      await Share.share({
+        title: item.fileName || 'File',
+        url: base64,
+        dialogTitle: 'Open file'
+      });
+    };
+
+    reader.readAsDataURL(blob);
   }
 
   async scheduleNotifications(item: CalendarItem) {
