@@ -5,6 +5,7 @@ import { DbService } from './db.service';
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Share } from '@capacitor/share';
+import { Directory, Filesystem } from '@capacitor/filesystem';
 
 @Component({
   selector: 'app-root',
@@ -148,7 +149,7 @@ export class App {
     this.save();
   }
 
-  async handleFile(event: any) {
+  /* async handleFile(event: any) {
     const file = event.target.files[0];
     if (!file || !this.selectedDay) return;
 
@@ -180,6 +181,39 @@ export class App {
       type: 'file',
       fileName: file.name
     });
+  } */
+
+  async handleFile(event: any) {
+    const file = event.target.files[0];
+    if (!file || !this.selectedDay) return;
+
+    const id = Date.now().toString();
+
+    const reader = new FileReader();
+
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+
+      // Save to native filesystem (REAL FILE)
+      await Filesystem.writeFile({
+        path: `calendar/${id}-${file.name}`,
+        data: base64,
+        directory: Directory.Data
+      });
+
+      // Save metadata
+      this.items.push({
+        id,
+        datetime: this.selectedDay!.toISOString(),
+        type: 'file',
+        fileName: file.name,
+        fileType: file.type
+      });
+
+      this.save();
+    };
+
+    reader.readAsDataURL(file);
   }
 
   getItemsByDay(day: Date) {
@@ -276,7 +310,7 @@ export class App {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   } */
 
-  async openFile(item: CalendarItem) {
+  /* async openFile(item: CalendarItem) {
     const data = await this.db.getFile(item.id);
 
     if (!data) {
@@ -301,6 +335,25 @@ export class App {
     };
 
     reader.readAsDataURL(blob);
+  } */
+
+  async openFile(item: CalendarItem) {
+
+    try {
+      const file = await Filesystem.getUri({
+        directory: Directory.Data,
+        path: `calendar/${item.id}-${item.fileName}`
+      });
+
+      await Share.share({
+        title: item.fileName,
+        url: file.uri,
+        dialogTitle: 'Open file'
+      });
+
+    } catch (e) {
+      alert('File not found in filesystem');
+    }
   }
 
   async scheduleNotifications(item: CalendarItem) {
