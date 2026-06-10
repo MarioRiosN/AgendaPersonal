@@ -183,7 +183,7 @@ export class App {
     });
   } */
 
-  async handleFile(event: any) {
+  /* async handleFile(event: any) {
     const file = event.target.files[0];
     if (!file || !this.selectedDay) return;
 
@@ -209,6 +209,45 @@ export class App {
         fileName: file.name,
         fileType: file.type
       });
+
+      this.save();
+    };
+
+    reader.readAsDataURL(file);
+  } */
+
+  async handleFile(event: any) {
+    const file = event.target.files[0];
+    if (!file || !this.selectedDay) return;
+
+    const id = Date.now().toString();
+
+    const path = `calendar/${id}-${file.name}`;
+
+    const reader = new FileReader();
+
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+
+      await Filesystem.writeFile({
+        path,
+        data: base64,
+        directory: Directory.Data
+      });
+
+      this.items = [
+        ...this.items,
+        {
+          id,
+          datetime: this.selectedDay!.toISOString(),
+          type: 'file',
+          fileName: file.name,
+          fileType: file.type,
+
+          // 🔥 IMPORTANT ADD THIS
+          filePath: path
+        } as any
+      ];
 
       this.save();
     };
@@ -337,12 +376,35 @@ export class App {
     reader.readAsDataURL(blob);
   } */
 
-  async openFile(item: CalendarItem) {
+  /* async openFile(item: CalendarItem) {
 
     try {
       const file = await Filesystem.getUri({
         directory: Directory.Data,
         path: `calendar/${item.id}-${item.fileName}`
+      });
+
+      await Share.share({
+        title: item.fileName,
+        url: file.uri,
+        dialogTitle: 'Open file'
+      });
+
+    } catch (e) {
+      alert('File not found in filesystem');
+    }
+  } */
+
+  async openFile(item: CalendarItem) {
+    try {
+      if (!item.filePath) {
+        alert('Missing file path');
+        return;
+      }
+
+      const file = await Filesystem.getUri({
+        directory: Directory.Data,
+        path: item.filePath
       });
 
       await Share.share({
@@ -410,9 +472,10 @@ type CalendarItem = {
   id: string;
   datetime: string;
   type: 'text' | 'file';
-  title?: string;
   content?: string;
   fileName?: string;
   fileType?: string;
-  fileData?: Blob;
+
+  // 🔥 NEW
+  filePath?: string;
 };
