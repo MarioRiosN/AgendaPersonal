@@ -168,132 +168,18 @@ export class App {
     this.save();
   }
 
-  /* async handleFile(event: any) {
-    const file = event.target.files[0];
-    if (!file || !this.selectedDay) return;
-
-    const id = Date.now().toString();
-
-    // 🔥 1. ACTUALIZAR UI primero
-    this.items = [
-      ...this.items,
-      {
-        id,
-        datetime: this.selectedDay.toISOString(),
-        type: 'file',
-        fileName: file.name,
-        fileType: file.type
-      }
-    ];
-
-    this.save();
-
-    // 🔥 2. guardar en DB después
-    await this.db.saveFile({
-      id,
-      file
-    });
-
-    await this.scheduleNotifications({
-      id,
-      datetime: this.selectedDay.toISOString(),
-      type: 'file',
-      fileName: file.name
-    });
-  } */
-
-  /* async handleFile(event: any) {
-    const file = event.target.files[0];
-    if (!file || !this.selectedDay) return;
-
-    const id = Date.now().toString();
-
-    const reader = new FileReader();
-
-    reader.onload = async () => {
-      const base64 = reader.result as string;
-
-      // Save to native filesystem (REAL FILE)
-      await Filesystem.writeFile({
-        path: `calendar/${id}-${file.name}`,
-        data: base64,
-        directory: Directory.Data
-      });
-
-      // Save metadata
-      this.items.push({
-        id,
-        datetime: this.selectedDay!.toISOString(),
-        type: 'file',
-        fileName: file.name,
-        fileType: file.type
-      });
-
-      this.save();
-    };
-
-    reader.readAsDataURL(file);
-  } */
-
-  /* async handleFile(event: any) {
-    const file = event.target.files[0];
-    if (!file || !this.selectedDay) return;
-
-    const id = Date.now().toString();
-
-    const path = `calendar/${id}-${file.name}`;
-
-    const reader = new FileReader();
-
-    reader.onload = async () => {
-      const base64 = reader.result as string;
-
-      await Filesystem.writeFile({
-        path,
-        data: base64,
-        directory: Directory.Data
-      });
-
-      this.items = [
-        ...this.items,
-        {
-          id,
-          datetime: this.selectedDay!.toISOString(),
-          type: 'file',
-          fileName: file.name,
-          fileType: file.type,
-
-          // 🔥 IMPORTANT ADD THIS
-          filePath: path
-        } as any
-      ];
-      
-      alert('ADDING FILE ITEM' + this.items);
-      this.save();
-      this.cdr.detectChanges();
-    };
-
-    reader.readAsDataURL(file);
-  } */
-
   async handleFile(event: any) {
     const file = event.target.files[0];
     if (!file || !this.selectedDay) return;
 
     const id = Date.now().toString();
-    const path = `calendar/${id}-${file.name}`;
+    const path = `${id}-${file.name}`;
 
     const reader = new FileReader();
 
     reader.onload = async () => {
       const dataUrl = reader.result as string;
-      const base64 = dataUrl.split(',')[1]; // 🔥 IMPORTANT FIX
-
-      await Filesystem.writeFile({
-        path,
-        data: base64,
-        directory: Directory.Data
-      });
+      const base64 = dataUrl.split(',')[1];
 
       const newItem: CalendarItem = {
         id,
@@ -307,6 +193,17 @@ export class App {
       this.items = [...this.items, newItem];
       this.save();
       this.cdr.detectChanges();
+
+      try {
+        await Filesystem.writeFile({
+          path,
+          data: base64,
+          directory: Directory.Data
+        });
+      } catch (e) {
+        console.error('Filesystem write failed', e);
+        alert('File could not be saved');
+      }
     };
 
     reader.readAsDataURL(file);
@@ -349,19 +246,6 @@ export class App {
     await this.scheduleNotifications(item);
   }
 
-  /* async deleteItem(item: CalendarItem) {
-    // 1. actualizar UI primero
-    this.items = this.items.filter(i => i.id !== item.id);
-    this.save();
-
-    // 2. luego borrar en DB
-    if (item.type === 'file') {
-      await this.db.deleteFile(item.id);
-    }
-
-    await this.cancelNotifications(item);
-  } */
-
   async deleteItem(item: CalendarItem) {
     // 1. actualizar UI primero
     this.items = this.items.filter(i => i.id !== item.id);
@@ -388,108 +272,6 @@ export class App {
       }
     }
   }
-
-  /* async openFile(item: CalendarItem) {
-    const data = await this.db.getFile(item.id);
-    if (!data) return;
-    const blob = data.file;
-    const url = URL.createObjectURL(blob);
-    window.location.href = url;
-  } */
-
-  /* async openFile(item: CalendarItem) {
-    alert('clicked');
-    const data = await this.db.getFile(item.id);
-    if (!data) {
-      alert('file not found');
-      return
-    };
-    alert('file found');
-    const blob = data.file;
-    alert(blob.type);
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.target = '_blank';   // IMPORTANT for iOS
-    a.rel = 'noopener';
-
-    document.body.appendChild(a);
-    a.click();
-
-    document.body.removeChild(a);
-
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  } */
-
-  /* async openFile(item: CalendarItem) {
-    const data = await this.db.getFile(item.id);
-
-    if (!data) {
-      alert('file not found');
-      return;
-    }
-
-    const blob = data.file;
-
-    // Convert blob → base64
-    const reader = new FileReader();
-
-    reader.onload = async () => {
-      const base64 = reader.result as string;
-
-      // iOS-safe: share/open system sheet
-      await Share.share({
-        title: item.fileName || 'File',
-        url: base64,
-        dialogTitle: 'Open file'
-      });
-    };
-
-    reader.readAsDataURL(blob);
-  } */
-
-  /* async openFile(item: CalendarItem) {
-
-    try {
-      const file = await Filesystem.getUri({
-        directory: Directory.Data,
-        path: `calendar/${item.id}-${item.fileName}`
-      });
-
-      await Share.share({
-        title: item.fileName,
-        url: file.uri,
-        dialogTitle: 'Open file'
-      });
-
-    } catch (e) {
-      alert('File not found in filesystem');
-    }
-  } */
-
-  /* async openFile(item: CalendarItem) {
-    try {
-      if (!item.filePath) {
-        alert('Missing file path');
-        return;
-      }
-
-      const file = await Filesystem.getUri({
-        directory: Directory.Data,
-        path: item.filePath
-      });
-
-      await Share.share({
-        title: item.fileName,
-        url: file.uri,
-        dialogTitle: 'Open file'
-      });
-
-    } catch (e) {
-      alert('File not found in filesystem');
-    }
-  } */
 
   async openFile(item: CalendarItem) {
     try {
